@@ -29,8 +29,6 @@
     });
 
     document.getElementById('butAddCity').addEventListener('click', function () {
-
-
         var select = document.getElementById('selectTimetableToAdd');
         var selected = select.options[select.selectedIndex];
         var key = selected.value;
@@ -40,6 +38,7 @@
         }
         app.getSchedule(key, label);
         app.selectedTimetables.push({key: key, label: label});
+		app.saveSelectedTimetables();
         app.toggleAddDialog(false);
     });
 
@@ -113,6 +112,20 @@
     app.getSchedule = function (key, label) {
         var url = 'https://api-ratp.pierre-grimaud.fr/v3/schedules/' + key;
 
+	if ('caches' in window) {
+      caches.match(url).then(function(response) {
+        if (response) {
+          response.json().then(function updateFromCache(json) {
+            var results = json.query.results;
+            results.key = key;
+            results.label = label;
+            results.created = json.query.created;
+            app.updateTimetableCard(results);
+          });
+        }
+      });
+    }
+	
         var request = new XMLHttpRequest();
         request.onreadystatechange = function () {
             if (request.readyState === XMLHttpRequest.DONE) {
@@ -147,6 +160,13 @@
      * or when the user has not saved any stations. See startup code for more
      * discussion.
      */
+	 
+	 // TODO add saveSelectedCities function here
+	app.saveSelectedTimetables = function() {
+		var selectedTimetables = JSON.stringify(app.selectedTimetables);
+		localStorage.selectedTimetables = selectedTimetables;
+	};
+	 
 
     var initialStationTimetable = {
 
@@ -179,9 +199,31 @@
      *   Instead, check out IDB (https://www.npmjs.com/package/idb) or
      *   SimpleDB (https://gist.github.com/inexorabletash/c8069c042b734519680c)
      ************************************************************************/
-
-    app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
+	app.selectedTimetables = localStorage.selectedTimetables;
+  if (app.selectedTimetables) {
+    app.selectedTimetables = JSON.parse(app.selectedTimetables);
+    app.selectedTimetables.forEach(function(city) {
+      app.getSchedule(city.key, city.label);
+    });
+  } else {
+    app.updateTimetableCard(initialStationTimetable);
     app.selectedTimetables = [
-        {key: initialStationTimetable.key, label: initialStationTimetable.label}
+      {key: initialStationTimetable.key, label: initialStationTimetable.label}
     ];
+    app.saveSelectedTimetables();
+  }
+  
+  
+    //app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
+	
+	// TODO add service worker code here
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker
+			.register('./service-worker.js')
+			.then(function() { console.log('Service Worker Registered'); });
+	}
+	
+    /*app.selectedTimetables = [
+        {key: initialStationTimetable.key, label: initialStationTimetable.label}
+    ];*/
 })();
