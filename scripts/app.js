@@ -131,6 +131,7 @@
             if (request.readyState === XMLHttpRequest.DONE) {
                 if (request.status === 200) {
                     var response = JSON.parse(request.response);
+					window.apiLoadTime = performance.now();
                     var result = {};
                     result.key = key;
                     result.label = label;
@@ -199,7 +200,7 @@
      *   Instead, check out IDB (https://www.npmjs.com/package/idb) or
      *   SimpleDB (https://gist.github.com/inexorabletash/c8069c042b734519680c)
      ************************************************************************/
-	app.selectedTimetables = localStorage.selectedTimetables;
+	/*app.selectedTimetables = localStorage.selectedTimetables;
   if (app.selectedTimetables) {
     app.selectedTimetables = JSON.parse(app.selectedTimetables);
     app.selectedTimetables.forEach(function(city) {
@@ -211,10 +212,14 @@
       {key: initialStationTimetable.key, label: initialStationTimetable.label}
     ];
     app.saveSelectedTimetables();
-  }
+  }*/
   
   
-    //app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
+    app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
+	app.selectedTimetables = [
+        {key: initialStationTimetable.key, label: initialStationTimetable.label}
+    ];
+	app.saveSelectedSchedules(true);
 	
 	// TODO add service worker code here
 	if ('serviceWorker' in navigator) {
